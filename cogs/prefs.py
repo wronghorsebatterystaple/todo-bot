@@ -162,4 +162,4 @@ class Prefs(commands.Cog):
         
     def write_JSON(self, author):
         with open(f"cogs/jsons/{author}.json", "w+") as outfile:
-            json.dump(self.prefs, outfile)
+            json.dump(self.prefs, outfile, indent=2)
