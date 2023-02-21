@@ -1,4 +1,0 @@
-*.gitignore
-*.env
-*.json
-/cogs/__pycache__
