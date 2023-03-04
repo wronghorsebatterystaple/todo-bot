@@ -23,6 +23,6 @@ async def on_ready():
 @bot.event
 async def on_command_error(ctx:commands.Context, error):
     if isinstance(error, CommandNotFound):
-        await ctx.send("Wow, such empty\n\nYou have entered an invalid command, ping me for help.")
+        await ctx.send("what\n\nYou have entered an invalid command, ping me for help.")
 
 bot.run(TOKEN)
