@@ -1,9 +1,0 @@
-*.gitignore
-*.env
-
-/jsons
-/todolists
-
-/__pycache__
-/cogs/__pycache__
-/util/__pycache__
