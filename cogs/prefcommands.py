@@ -1,6 +1,6 @@
 from discord.ext import commands
-from util.json_utils import read_JSON, write_JSON
-from util.time_utils import time_to_timestr, timestr_to_displaystr
+from util.json_utils import *
+from util.time_utils import *
 
 
 async def setup(bot):
@@ -17,6 +17,8 @@ class PrefCommands(commands.Cog):
 #                                                                      COMMANDS                                                                      #
 ######################################################################################################################################################
 
+
+    ########################################################
     # /pref: changes specific preference or show all of them
     @commands.command()
     async def pref(self, ctx:commands.Context, arg1=""):
@@ -49,6 +51,7 @@ class PrefCommands(commands.Cog):
         return
     
 
+    ####################################
     # /allprefs: changes all preferences
     @commands.command()
     async def allprefs(self, ctx:commands.Context):
@@ -62,6 +65,7 @@ class PrefCommands(commands.Cog):
         await self.set_time_format(ctx, author)
         await self.set_start_of_weeks(ctx, author)
         await self.set_default_due_time(ctx, author)
+        await self.set_default_reminder_timing(ctx, author)
 
         return
     
@@ -71,6 +75,7 @@ class PrefCommands(commands.Cog):
 ######################################################################################################################################################
 
 
+    ################################################
     # 1. function for setting DOW or date preference
     async def set_dow_or_date(self, ctx:commands.Context, author):
         await ctx.send("1. DOW or date\n\t→ Enter \"DOW\" if you would like to have dates represented by days of the week, otherwise enter \"date\".")
@@ -91,6 +96,7 @@ class PrefCommands(commands.Cog):
         return
     
 
+    ################################################
     # 2. function for setting date format preference
     async def set_date_format(self, ctx:commands.Context, author):
         await ctx.send("2. Date format\n\t→ Enter \"YYYY-MM-DD\", \"MM-DD-YYYY\", or \"DD-MM-YYYY\", even if you've chosen DOW instead of dates")
@@ -110,6 +116,7 @@ class PrefCommands(commands.Cog):
         return
 
 
+    ################################################
     # 3. function for setting time format preference
     async def set_time_format(self, ctx:commands.Context, author):
         await ctx.send("3. Time Format\n\t→ Enter \"12\" or \"24\" for 12-hour or 24-hour time respectively")
@@ -128,6 +135,7 @@ class PrefCommands(commands.Cog):
         return
 
     
+    ##################################################
     # 4. function for setting start of week preference
     async def set_start_of_weeks(self, ctx:commands.Context, author):
         await ctx.send("4. Start of week\n\t→ Enter \"sun\" or \"mon\"")
@@ -147,9 +155,10 @@ class PrefCommands(commands.Cog):
         return
     
 
+    ##########################################
     # 5. function for setting default due time
     async def set_default_due_time(self, ctx:commands.Context, author):
-        await ctx.send("5. Default due time\n\t→ Enter a valid time in either 12- or 24-hour format without seconds, e.g. \"1159 pm\" or \"23:59\"")
+        await ctx.send("5. Default due time\n\t→ Enter a time in either 12- or 24-hour format w/o seconds, e.g. \"1159 pm\" or \"23:59\"")
 
         # wait for a valid response from user
         valid = False
@@ -162,7 +171,27 @@ class PrefCommands(commands.Cog):
         self.prefs["5. Default_due_time"] = response
         write_JSON(author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"Default due time\" set to: " + self.prefs["5. Default_due_time"])
+        await ctx.send("> Preference for \"default due time\" set to: " + self.prefs["5. Default_due_time"])
+        return
+    
+
+    #################################################
+    # 6. function for setting default reminder timing
+    async def set_default_reminder_timing(self, ctx:commands.Context, author):
+        await ctx.send("6. Default reminder timing\n\t→ Enter a duration w/o seconds for the amount of time before due to send a reminder, e.g. \"2:00\" or \"0:45\"")
+
+        # wait for a valid response from user
+        valid = False
+        while not valid: # not using built-in wait_for check since we want to return both the boolean and the processed durstr from the checking function
+            response = await self.bot.wait_for("message")
+            response = dur_to_durstr(str(response.content))
+            valid = response != "error"
+        # save response to user preferences json
+        response = durstr_to_displaystr(response)
+        self.prefs["6. Default_reminder_timing"] = response
+        write_JSON(author, self.prefs)
+        # print confirmation
+        await ctx.send("> Preference for \"default reminder timing\" set to: " + self.prefs["6. Default_reminder_timing"])
         return
     
     
@@ -171,7 +200,8 @@ class PrefCommands(commands.Cog):
 ######################################################################################################################################################
 
 
-    # helper function to match arguments in /pref to preference-setting functions based on their numerical labels
+    ##########################################################################################
+    # match arguments in /pref to preference-setting functions based on their numerical labels
     async def choose_pref_num(self, ctx:commands.Context, author, arg1):
         item_counter = 0 # to keep track of the actual numerical label of the arguments
         
@@ -194,13 +224,17 @@ class PrefCommands(commands.Cog):
                     case 5:
                         await self.set_default_due_time(ctx, author)
                         return
+                    case 6:
+                        await self.set_default_reminder_timing(ctx, author)
+                        return
         
         # else if match not found because of invalid argument
         await ctx.send("what")
         return
 
 
-    # helper function to match arguments in /pref to preference-setting functions based on their names
+    ###############################################################################
+    # match arguments in /pref to preference-setting functions based on their names
     async def choose_pref_name(self, ctx:commands.Context, author, arg1):
         arg_length = len(arg1)
         arg1 = arg1.lower()
@@ -227,6 +261,9 @@ class PrefCommands(commands.Cog):
                     case 5:
                         await self.set_default_due_time(ctx, author)
                         return
+                    case 6:
+                        await self.set_default_reminder_timing(ctx, author)
+                        return
         
         # else if match not found because of invalid argument
         await ctx.send("what")
@@ -238,6 +275,8 @@ class PrefCommands(commands.Cog):
 ######################################################################################################################################################
 # must do this for every file instead of having a master command group because command groups don't seem to carry between files
 
+
+    ########################################################################################################################################
     # prevent other commands from being called during command runtimes by setting command prefix to <Null> for the duration of every command
     @pref.before_invoke
     @allprefs.before_invoke
@@ -245,6 +284,7 @@ class PrefCommands(commands.Cog):
         self.bot.command_prefix = '\u0000'
 
 
+    ########################
     # restore command prefix
     @pref.after_invoke
     @allprefs.after_invoke
