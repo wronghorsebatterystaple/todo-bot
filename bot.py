@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 
+# temp https://stackoverflow.com/questions/67295010/how-do-i-schedule-a-task-to-run-at-a-fixed-time-in-discord-py, https://www.javaer101.com/en/article/40873438.html
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN') # save token to gitignored .env file
