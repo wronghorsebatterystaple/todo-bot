@@ -5,7 +5,6 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 
-# temp https://stackoverflow.com/questions/67295010/how-do-i-schedule-a-task-to-run-at-a-fixed-time-in-discord-py, https://www.javaer101.com/en/article/40873438.html
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN') # save token to gitignored .env file
@@ -16,9 +15,12 @@ bot = commands.Bot(command_prefix='/', intents=discord.Intents.all())
 @bot.event
 async def on_ready():
     # initialize and load command cogs
-    for file in os.listdir("./cogs"):
+    for file in os.listdir("./cogs/commands"):
         if file.endswith(".py"):
-            await bot.load_extension(f"cogs.{file[:-3]}")
+            await bot.load_extension(f"cogs.commands.{file[:-3]}")
+    for file in os.listdir("./cogs/taskloops"):
+        if file.endswith(".py"):
+            await bot.load_extension(f"cogs.taskloops.{file[:-3]}")
 
 # catch invalid commands
 @bot.event

@@ -1,8 +1,8 @@
 *.env
 
-/preferences
-/todolists
+/jsons
 
 /__pycache__
-/cogs/__pycache__
+/cogs/commands/__pycache__
+/cogs/taskloops/__pycache__
 /util/__pycache__

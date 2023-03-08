@@ -10,6 +10,7 @@ def time_to_timestr(time:str) -> str:
     twelve = False
     colon = False
     minute_digits = 0
+    hour_digits = 0
     total_digits = 0
 
     for i in range(len(time)):
@@ -19,12 +20,14 @@ def time_to_timestr(time:str) -> str:
             total_digits += 1
             if colon:
                 minute_digits += 1
+            else:
+                hour_digits += 1
         elif char == ':':
             colon = True
         elif char == 'a' or char == 'p':
             timestr += char
             twelve = True
-            # if 'a'/'p' or "am"/"pm" aren't the last char(s) of the input, return invalid response (e.g. 2a:59, 9p0)
+            # if 'a'/'p' are found somewhere besides the last char(s) of the input, return invalid response (e.g. 2a:59, 9p0)
             if i < len(time) - 1:
                 if i == len(time) - 2 and time[i + 1] != 'm':
                     return "error"
@@ -40,7 +43,7 @@ def time_to_timestr(time:str) -> str:
     if timestr == "" or timestr == "a" or timestr == "p":
         return "error"
     
-    # if there are no minutes, assume user inputted the hour and automatically add zeroes for minutes (e.g. 12p -> 1200p, 13 -> 1300, 5 -> 500:)
+    # if there are no minutes, assume user inputted the hour and automatically add zeroes for minutes (e.g. 12p -> 1200p, 13 -> 1300, 5 -> 500)
     if (not colon and (total_digits < 3)) or (colon and minute_digits == 0):
         timestr = timestr[0:total_digits] + "00" + timestr[total_digits:]
         minute_digits = 2
@@ -50,8 +53,8 @@ def time_to_timestr(time:str) -> str:
     if not colon and total_digits >= 3:
         minute_digits = 2
     
-    # if there aren't 0-2 hour digits and 0/2 minute digits, return invalid response (e.g. 245:15, 23:5, 8:344, 15:30:00)
-    if minute_digits > 2 or total_digits - minute_digits > 2 or minute_digits == 1:
+    # if there aren't 0-2 hour digits and 0/2 minute digits (or only 2 after the previous processing), return invalid response (e.g. 245:15, 23:5, 8:344, 15:30:00)
+    if hour_digits > 2 or minute_digits != 2:
         return "error"
     
     # else add leading zeros if not 4 digits, as we can now safely asssume that all the user-inputted digits fill up the minute side first (e.g. 130p -> 0130p, 245 -> 0245)
@@ -83,8 +86,8 @@ def time_to_timestr(time:str) -> str:
     return timestr
 
 
-##################################################################################################
-# convert a 4-digit 24-hour time string to display string with ":" and also "am"/"pm" if necessary
+######################################################################################################################################################################
+# convert a 4-digit 24-hour time string to display string with ":" and also "am"/"pm" if necessary (e.g. "2359" -> "23:59" in 24-hour, "0800" -> "08:00am" in 12-hour)
 def timestr_to_displaystr(timestr:str, prefs:dict) -> str:
     hours = int(timestr[:2])
     minutes = timestr[2:]
@@ -99,9 +102,103 @@ def timestr_to_displaystr(timestr:str, prefs:dict) -> str:
     if len(hours) < 2:
         hours = "0" + hours
     
-    # add colons
+    # add colon
     timestr = str(hours) + ":" + minutes
     return timestr
+
+
+######################################################################################################################################################
+#                                                                 TIMEZONE FUNCTIONS                                                                 #
+######################################################################################################################################################
+
+
+####################################################################################################################################
+# determine if an inputted timezone offset is valid and convert it to a 5-character timezone offset string (e.g. "-0800" or "+1400")
+def tz_to_tzstr(tz:str) -> str:
+    tzstr = ""
+    negative = False
+    colon = False
+    minute_digits = 0
+    hour_digits = 0
+    total_digits = 0
+
+    for i in range(len(tz)):
+        char = tz[i]
+        if char.isnumeric():
+            tzstr += char
+            total_digits += 1
+            if colon:
+                minute_digits += 1
+            else:
+                hour_digits += 1
+        elif char == ':':
+            colon = True
+
+        # if '+'/'-' are found somewhere besides the first char of the input, return invalid response (e.g. ++4:00, -3-30)
+        elif char == '+':
+            if i != 0:
+                return "error"         
+        elif char == '-':
+            if i != 0:
+                return "error"
+            else:
+                negative = True
+
+        # if any character besides a number, '+', '-', ' ', or ':' is detected, return invalid response (e.g. 2f2, abc, -124s, !^%~)
+        elif char != ' ':
+            return "error"
+    
+    # if no numeric characters entered, return invalid response (e.g. ::,    , a, p)
+    if tzstr == "":
+        return "error"
+    
+    # if there are no minutes, assume user inputted the hour and automatically add zeroes for minutes (e.g. 12 -> 1200, 13 -> 1300, 5 -> 500)
+    if (not colon and (total_digits < 3)) or (colon and minute_digits == 0):
+        tzstr = tzstr[0:total_digits] + "00" + tzstr[total_digits:]
+        minute_digits = 2
+        total_digits += 2
+    
+    # if there is no colon, assume the last 2 digits are minutes (e.g. 1200, 1159am, 245, 130p)
+    if not colon and total_digits >= 3:
+        minute_digits = 2
+    
+    # if there aren't 0-2 hour digits and 0/2 minute digits (or only 2 after the previous processing), return invalid response (e.g. 245:15, 23:5, 8:344, 15:30:00)
+    if hour_digits > 2 or minute_digits != 2:
+        return "error"
+    
+    # else add leading zeros (after signs) if not 4 digits, as we can now safely asssume that all the user-inputted digits fill up the minute side first (e.g. 130 -> 0130, -245 -> -0245)
+    while total_digits < 4:
+        tzstr = "0" + tzstr
+        total_digits += 1
+
+    # split hours and minutes for later analysis
+    hours = tzstr[:2]
+    minutes = tzstr[2:]
+    
+    # if hours and minutes aren't within a valid range, return invalid response (e.g. 15:00, -4599, 12:60)
+    hours = int(hours)
+    minutes = int(minutes)
+    if hours < 0 or hours > 14 or minutes < 0 or minutes > 59:
+        return "error"
+    
+    # what is left should be free of edge cases
+    # (should)
+
+    if negative:
+        return "-" + tzstr
+    else:
+        return "+" + tzstr
+
+
+###########################################################################################################################################################
+# convert a 5-character timezone offset string to display string with "UTC" appended in front and ":" (e.g. "-0800" -> "UTC-08:00", "+1400" -> "UTC+14:00")
+def tzstr_to_displaystr(tzstr:str) -> str:
+    hours = tzstr[:3]
+    minutes = tzstr[3:]
+    
+    # add "UTC" and colon
+    tzstr = "UTC" + hours + ":" + minutes
+    return tzstr
 
 
 ######################################################################################################################################################
@@ -109,17 +206,19 @@ def timestr_to_displaystr(timestr:str, prefs:dict) -> str:
 ######################################################################################################################################################
 
 
-############################################################################################################
-# determine if an inputted duration is valid and convert it to a 4-digit duration string (e.g. 0200 or 0030)
+################################################################################################################
+# determine if an inputted duration is valid and convert it to a 4-digit duration string (e.g. "0200" or "0030")
 def dur_to_durstr(dur:str) -> str:
     durstr = ""
     colon = False
     minute_digits = 0
     hour_digits = 0
+    total_digits = 0
 
     for char in dur:
         if char.isnumeric():
             durstr += char
+            total_digits += 1
             if colon:
                 minute_digits += 1
             else:
@@ -134,8 +233,14 @@ def dur_to_durstr(dur:str) -> str:
     if not colon:
         return "error"
     
-    # if there aren't 0-2 hour digits and 2 minute digits, return invalid response (e.g. 233:10, 1:0, 2:30:30)
-    if minute_digits < 2 or minute_digits > 2 or hour_digits > 2 or hour_digits < 0:
+    # else if there is a colon but no minutes, assume user inputted the hour and automatically add zeroes for minutes (e.g. 12: -> 1200, 5: -> 500)
+    if (not colon and (total_digits < 3)) or (colon and minute_digits == 0):
+        durstr = durstr[0:total_digits] + "00" + durstr[total_digits:]
+        minute_digits = 2
+        total_digits += 2
+    
+    # if there aren't 0-2 hour digits and 0/2 minute digits (or only 2 after the previous processing), return invalid response (e.g. 233:10, 1:0, 2:30:30)
+    if hour_digits > 2 or minute_digits != 2:
         return "error"
     
     # else add leading zeros if there are less than 2 hour digits (e.g. 2:00 -> 02:00, :30 -> 00:30)
@@ -147,12 +252,13 @@ def dur_to_durstr(dur:str) -> str:
     return durstr
 
 
-##############################################################
-# convert a 4-digit duration string to display string with ":"
+##########################################################################################################
+# convert a 4-digit duration string to display string with ":" (e.g. "0200" -> "02:00", "0030" -> "00:30")
 def durstr_to_displaystr(durstr:str) -> str:
-    # add colons
     hours = durstr[:2]
     minutes = durstr[2:]
+
+    # add colon
     return hours + ":" + minutes
 
 
@@ -211,7 +317,17 @@ def twentyfour_to_12(hours:int, minutes:str) -> tuple[str, str]:
 
 
 ###########################################
-def durstr_to_minutestr(durstr:str) -> str:
+def durstr_to_minuteint(durstr:str) -> int:
     hours = int(durstr[:2])
     minutes = int(durstr[2:])
-    return str(hours * 60 + minutes)
+    return hours * 60 + minutes
+
+
+#########################################
+def tzstr_to_minuteint(tzstr:str) -> int:
+    hours = int(tzstr[1:3])
+    minutes = int(tzstr[3:])
+    if tzstr.startswith("+"):
+        return hours * 60 + minutes
+    else:
+        return -(hours * 60 + minutes)
