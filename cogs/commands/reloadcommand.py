@@ -23,10 +23,10 @@ class ReloadCommand(commands.Cog):
     async def reload(self, ctx:commands.Context):
         for file in os.listdir("./cogs/commands"):
             if file.endswith(".py"):
-                await self.bot.load_extension(f"cogs.commands.{file[:-3]}")
+                await self.bot.reload_extension(f"cogs.commands.{file[:-3]}")
         for file in os.listdir("./cogs/taskloops"):
             if file.endswith(".py"):
-                await self.bot.load_extension(f"cogs.taskloops.{file[:-3]}")
+                await self.bot.reload_extension(f"cogs.taskloops.{file[:-3]}")
 
         return
 

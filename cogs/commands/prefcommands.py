@@ -24,6 +24,7 @@ class PrefCommands(commands.Cog):
     # /pref: changes specific preference or show all of them
     @commands.command()
     async def pref(self, ctx:commands.Context, *, arg1=""): # asterisk is "consume rest" which allows multiple-word arguments
+
         # read preferences from json
         author = ctx.message.author
         self.prefs = read_json("preferences", author)
@@ -32,24 +33,24 @@ class PrefCommands(commands.Cog):
         if arg1 == "":
             output_message = "These are your currently set preferences:"
             # reply in a more readable format than json
-            for k, v in self.prefs.items():
-                if not isinstance(v, dict):
+            for pref, value in self.prefs.items():
+                if not isinstance(value, dict):
                     output_message += "\n\t"
-                    k = ' '.join(k.split('_')) # replace underscores with spaces
-                    output_message += k
+                    pref = ' '.join(pref.split('_')) # replace underscores with spaces
+                    output_message += pref
                     output_message += ": "
-                    output_message += v
+                    output_message += value
                 # if single-nested json entry, unpack the nested dictionary too
                 else:
                     output_message += "\n\t"
-                    k = ' '.join(k.split('_')) # replace underscores with spaces
-                    output_message += k
-                    for kk, vv in v.items():
+                    pref = ' '.join(pref.split('_')) # replace underscores with spaces
+                    output_message += pref
+                    for subpref, subvalue in value.items():
                         output_message += "\n\t\t"
-                        kk = ' '.join(kk.split('_')) # replace underscores with spaces
-                        output_message += kk
+                        subpref = ' '.join(subpref.split('_')) # replace underscores with spaces
+                        output_message += subpref
                         output_message += ": "
-                        output_message += vv
+                        output_message += subvalue
             await ctx.send(output_message)
             return
         
@@ -68,6 +69,7 @@ class PrefCommands(commands.Cog):
     # /allprefs: changes all preferences
     @commands.command()
     async def allprefs(self, ctx:commands.Context):
+
         # read preferences from json
         author = ctx.message.author
         self.prefs = read_json("preferences", author)
@@ -213,7 +215,7 @@ class PrefCommands(commands.Cog):
     #################################################
     # 7. function for setting default reminder timing
     async def set_default_reminder_timing(self, ctx:commands.Context, author):
-        await ctx.send("7. Default reminder timing\n\t→ Enter a duration w/o seconds for the amount of time before a due date to send a reminder, e.g. \"2:00\" or \"0:45\". \"00:00\" means no reminders.")
+        await ctx.send("7. Default reminder timing\n\t→ Enter a duration w/o seconds for the amount of time before a due date to send a reminder, e.g. \"2:00\" or \"0:45\". \"0\" means no reminders.")
 
         # wait for a valid response from user
         valid = False
@@ -275,10 +277,10 @@ class PrefCommands(commands.Cog):
         return
     
 
-    ###################################################################
-    # 8c. function for setting days per check for deleting ticked items
+    ################################################################################################################################
+    # 8c. function for setting days per check for deleting ticked items (days since preferred start of week/last check for deletion)
     async def set_days_per_deletion_of_ticked_items(self, ctx:commands.Context, author):
-        await ctx.send("8c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.prefs["4. Start_of_week"])
+        await ctx.send("8c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.prefs["5. Start_of_week"])
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -291,10 +293,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content)
-        self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked"] = response
-        write_json(author, self.prefs)
+        self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked_items"] = response
+        write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked"])
+        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked_items"])
         return
     
     
