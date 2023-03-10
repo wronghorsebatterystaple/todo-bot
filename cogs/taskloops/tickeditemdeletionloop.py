@@ -10,8 +10,10 @@ from util.time_utils import *
 times = [datetime.time(hour=0, minute=0, second=0)] # must be global for @tasks.loop(), and must be initialized with something so cog doesn't raise error
 # because @tasks.loop() is parsed before call to self.update_all()
 
+
 async def setup(bot):
     await bot.add_cog(TickedItemDeletionLoop())
+
 
 class TickedItemDeletionLoop(commands.Cog):
     def __init__(self):
@@ -32,6 +34,7 @@ class TickedItemDeletionLoop(commands.Cog):
 ######################################################################################################################################################
 
 
+    #########################################################################################################################################
     # every midnight for every user, check if that user wanted ticked items and whether their "days per deletion of ticked items" timer is up
     @tasks.loop(time=times)
     async def check_ticked_item_deletion(self):
@@ -91,6 +94,7 @@ class TickedItemDeletionLoop(commands.Cog):
                     await self.delete_ticked_items(username)
 
     
+    #########################################################################################
     # every 8 minutes (coprime to 15 which is the smallest real-life unit of timezone offset)
     # check if any preferences file has been modified (or created) in the past 8 minutes and call update() on that file
     # since coprime means that intervals of 8 and 15 minutes will never coincide
@@ -107,6 +111,7 @@ class TickedItemDeletionLoop(commands.Cog):
 ######################################################################################################################################################
 
 
+    #####################
     def update_all(self):
         for file in os.listdir("./jsons/preferences"):
             global times
@@ -128,6 +133,7 @@ class TickedItemDeletionLoop(commands.Cog):
         self.check_ticked_item_deletion.change_interval(time=times)
     
 
+    #################################
     async def update(self, file:str):
         global times
         username = os.path.splitext(file)[0]
@@ -148,6 +154,7 @@ class TickedItemDeletionLoop(commands.Cog):
             self.check_ticked_item_deletion.change_interval(time=times)
     
 
+    ##################################################
     async def delete_ticked_items(self, username:str):
         print("ticked items deleted for ", username)
 
