@@ -2,7 +2,4 @@
 
 /jsons
 
-/__pycache__
-/cogs/commands/__pycache__
-/cogs/taskloops/__pycache__
-/util/__pycache__
+__pycache__/*
