@@ -51,8 +51,8 @@ class TickedItemDeletionLoop(commands.Cog):
             # if user did not want ticked items and rather wanted items to just be deleted immediately (or didn't finish setup), no need to do anything more and just return
             preferences = read_json("preferences", username)
             if "8. Completion_ticks" in preferences:
-                if "8a. Exists" in preferences["8. Completion_ticks"]:
-                    if preferences["8. Completion_ticks"]["8a. Exists"] == "no":
+                if "8a. Yes/No" in preferences["8. Completion_ticks"]:
+                    if preferences["8. Completion_ticks"]["8a. Yes/No"] == "no":
                         return
                 if "8c. Days_per_deletion_of_ticked_items" not in preferences["8. Completion_ticks"]:
                     return
