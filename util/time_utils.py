@@ -57,7 +57,7 @@ def time_to_timestr(time:str) -> str:
         minute_digits = 2
         total_digits += 2
     
-    # if there is no colon, assume the last 2 digits are minutes and the remaning are hours (e.g. 1200, 1159am, 245, 130p)
+    # if there is no colon, assume the last 2 digits are minutes and the remaning are hours (e.g. 1200, 11510am, 245, 130p)
     if not colon and total_digits >= 3:
         minute_digits = 2
         hour_digits = hour_digits - minute_digits

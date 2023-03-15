@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from discord.ext import commands
 from util.json_utils import *
 from util.time_utils import *
@@ -82,6 +80,8 @@ class PrefCommands(commands.Cog):
         await self.set_start_of_weeks(ctx, author)
         await self.set_default_due_time(ctx, author)
         await self.set_default_reminder_timing(ctx, author)
+        await self.set_numbered_subjects(ctx, author)
+        await self.set_numbered_tasks(ctx, author)
         await self.set_completion_ticks(ctx, author)
         await self.set_daily_todo_list_recap(ctx, author)
         await self.set_display_todo_list_when_updated(ctx, author)
@@ -236,9 +236,9 @@ class PrefCommands(commands.Cog):
     
 
     ######################################################
-    # 8a. function for setting completion ticks preference
-    async def set_completion_ticks(self, ctx:commands.Context, author):
-        await ctx.send("8a. Completion Ticks\n\t→ Enter \"yes\" if you want completed items to be ticked rather than immediately removed, otherwise enter \"no\"")
+    # 8. function for setting numbered subjects preference
+    async def set_numbered_subjects(self, ctx:commands.Context, author):
+        await ctx.send("8. Numbered Subjects\n\t→ Enter \"yes\" if you want subjects/task categories to be automatically labeled numerically by alphabetical order (for easier access), else enter \"no\".")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -248,10 +248,50 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["8. Completion_ticks"] = {"8a. Yes/No": response}
+        self.prefs["8. Numbered_subjects"] = response
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"completion ticks\" set to: " + self.prefs["8. Completion_ticks"]["8a. Yes/No"])
+        await ctx.send("> Preference for \"numbered subjects\" set to: " + self.prefs["8. Numbered_subjects"])
+        return
+    
+
+    ###################################################
+    # 9. function for setting numbered tasks preference
+    async def set_numbered_tasks(self, ctx:commands.Context, author):
+        await ctx.send("9. Numbered Tasks\n\t→ Enter \"yes\" if you want tasks to be automatically labeled numerically by subject, due date, and then alphabetical order (for easier access), else enter \"no\".")
+
+        def check_response(message):
+            message_str = (str(message.content)).lower()
+            return message_str == "yes" or message_str == "no"
+        
+        # wait for a valid response from user
+        response = await self.bot.wait_for("message", check=check_response)
+        # save response to user preferences json
+        response = str(response.content).lower()
+        self.prefs["9. Numbered_tasks"] = response
+        write_json("preferences", author, self.prefs)
+        # print confirmation
+        await ctx.send("> Preference for \"numbered tasks\" set to: " + self.prefs["9. Numbered_tasks"])
+        return
+    
+
+    #######################################################
+    # 10a. function for setting completion ticks preference
+    async def set_completion_ticks(self, ctx:commands.Context, author):
+        await ctx.send("10a. Completion Ticks\n\t→ Enter \"yes\" if you want completed items to be ticked rather than immediately removed, otherwise enter \"no\"")
+
+        def check_response(message):
+            message_str = (str(message.content)).lower()
+            return message_str == "yes" or message_str == "no"
+        
+        # wait for a valid response from user
+        response = await self.bot.wait_for("message", check=check_response)
+        # save response to user preferences json
+        response = str(response.content).lower()
+        self.prefs["10. Completion_ticks"] = {"10a. Yes/No": response}
+        write_json("preferences", author, self.prefs)
+        # print confirmation
+        await ctx.send("> Preference for \"completion ticks\" set to: " + self.prefs["10. Completion_ticks"]["10a. Yes/No"])
 
         # follow-ups if "yes"
         if response == "yes":
@@ -260,10 +300,10 @@ class PrefCommands(commands.Cog):
         return
     
 
-    #################################################
-    # 8b. function for setting tick colors preference
+    ##################################################
+    # 10b. function for setting tick colors preference
     async def set_tick_colors(self, ctx:commands.Context, author):
-        await ctx.send("8b. Tick Colors\n\t→ Enter \"yes\" if you want ticks to be colored by day of week completed, otherwise enter \"no\"")
+        await ctx.send("10b. Tick Colors\n\t→ Enter \"yes\" if you want ticks to be colored by day of week completed, otherwise enter \"no\"")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -273,17 +313,17 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content).lower()
-        self.prefs["8. Completion_ticks"]["8b. Colors"] = response
+        self.prefs["10. Completion_ticks"]["10b. Colors"] = response
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"tick colors\" set to: " + self.prefs["8. Completion_ticks"]["8b. Colors"])
+        await ctx.send("> Preference for \"tick colors\" set to: " + self.prefs["10. Completion_ticks"]["10b. Colors"])
         return
     
 
-    ################################################################################################################################
-    # 8c. function for setting days per check for deleting ticked items (days since preferred start of week/last check for deletion)
+    #################################################################################################################################
+    # 10c. function for setting days per check for deleting ticked items (days since preferred start of week/last check for deletion)
     async def set_days_per_deletion_of_ticked_items(self, ctx:commands.Context, author):
-        await ctx.send("8c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.prefs["5. Start_of_week"])
+        await ctx.send("10c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.prefs["5. Start_of_week"])
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -296,17 +336,17 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content)
-        self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked_items"] = response
+        self.prefs["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"] = response
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.prefs["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked_items"])
+        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.prefs["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"])
         return
     
 
-    ###########################################################
-    # 9a. function for setting daily todo list recap preference
+    ############################################################
+    # 11a. function for setting daily todo list recap preference
     async def set_daily_todo_list_recap(self, ctx:commands.Context, author):
-        await ctx.send("9a. Daily Todo List Recap\n\t→ Enter \"yes\" if you want a daily todo list recap to be sent, otherwise enter \"no\".")
+        await ctx.send("11a. Daily Todo List Recap\n\t→ Enter \"yes\" if you want a daily todo list recap to be sent, otherwise enter \"no\".")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -316,10 +356,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content).lower()
-        self.prefs["9. Daily_todo_list_recap"] = {"9a. Yes/No": response}
+        self.prefs["11. Daily_todo_list_recap"] = {"11a. Yes/No": response}
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"daily todo list recap\" set to: " + self.prefs["9. Daily_todo_list_recap"]["9a. Yes/No"])
+        await ctx.send("> Preference for \"daily todo list recap\" set to: " + self.prefs["11. Daily_todo_list_recap"]["11a. Yes/No"])
 
         # follow-up if "yes"
         if response == "yes":
@@ -327,10 +367,10 @@ class PrefCommands(commands.Cog):
         return
     
 
-    #####################################################
-    # 9b. function for setting daily todo list recap time
+    ######################################################
+    # 11b. function for setting daily todo list recap time
     async def set_daily_recap_time(self, ctx:commands.Context, author):
-        await ctx.send("9b. Daily Recap Time\n\t→ Enter a time in either 12- or 24-hour format w/o seconds, e.g. \"1100 am\" or \"15:15\"")
+        await ctx.send("11b. Daily Recap Time\n\t→ Enter a time in either 12- or 24-hour format w/o seconds, e.g. \"1100 am\" or \"15:15\"")
 
         # wait for a valid response from user
         valid = False
@@ -340,17 +380,17 @@ class PrefCommands(commands.Cog):
             valid = response != "error"
         # save response to user preferences json
         response = timestr_to_displaystr(response, self.prefs)
-        self.prefs["9. Daily_todo_list_recap"]["9b. Daily_recap_time"] = response
+        self.prefs["11. Daily_todo_list_recap"]["11b. Daily_recap_time"] = response
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"daily recap time\" set to: " + self.prefs["9. Daily_todo_list_recap"]["9b. Daily_recap_time"])
+        await ctx.send("> Preference for \"daily recap time\" set to: " + self.prefs["11. Daily_todo_list_recap"]["11b. Daily_recap_time"])
         return
     
 
     ######################################################################
-    # 10. function for setting diplaying todo list when updated preference
+    # 12. function for setting diplaying todo list when updated preference
     async def set_display_todo_list_when_updated(self, ctx:commands.Context, author):
-        await ctx.send("10. Display Todo List When Updated\n\t→ Enter \"yes\" if you would like me to display your updated todo list every time you make a change, otherwise enter \"no\".")
+        await ctx.send("12. Display Todo List When Updated\n\t→ Enter \"yes\" if you would like me to display your updated todo list every time you make a change, otherwise enter \"no\".")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -360,10 +400,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["10. Display_todo_list_when_updated"] = response
+        self.prefs["12. Display_todo_list_when_updated"] = response
         write_json("preferences", author, self.prefs)
         # print confirmation
-        await ctx.send("> Preference for \"display todo list when updated\" set to: " + self.prefs["10. Display_todo_list_when_updated"])
+        await ctx.send("> Preference for \"display todo list when updated\" set to: " + self.prefs["12. Display_todo_list_when_updated"])
         return
 
 
@@ -376,10 +416,11 @@ class PrefCommands(commands.Cog):
     # match arguments in /pref to preference-setting functions based on their numerical labels
     async def choose_pref_num(self, ctx:commands.Context, author, arg1):
         item_counter = 0 # to keep track of the actual numerical label of the arguments
+        arg_length = len(arg1)
         
         for k in self.prefs.keys():
             item_counter += 1
-            if k[0] == arg1[0]: # if match found
+            if k[:arg_length] == arg1[:arg_length]: # if match found
                 match item_counter:
                     case 1:
                         await self.set_timezone(ctx, author)
@@ -403,12 +444,18 @@ class PrefCommands(commands.Cog):
                         await self.set_default_reminder_timing(ctx, author)
                         return
                     case 8:
-                        await self.set_completion_ticks(ctx, author)
+                        await self.set_numbered_subjects(ctx, author)
                         return
                     case 9:
-                        await self.set_daily_todo_list_recap(ctx, author)
+                        await self.set_numbered_tasks(ctx, author)
                         return
                     case 10:
+                        await self.set_completion_ticks(ctx, author)
+                        return
+                    case 11:
+                        await self.set_daily_todo_list_recap(ctx, author)
+                        return
+                    case 12:
                         await self.set_display_todo_list_when_updated(ctx, author)
                         return
         
@@ -420,10 +467,10 @@ class PrefCommands(commands.Cog):
     ###############################################################################
     # match arguments in /pref to preference-setting functions based on their names
     async def choose_pref_name(self, ctx:commands.Context, author, arg1):
+        item_counter = 0
         arg_length = len(arg1)
         arg1 = arg1.lower()
         arg1 = '_'.join(arg1.split(' ')) # replace spaces with underscores since json uses underscores
-        item_counter = 0
 
         for k in self.prefs.keys():
             item_counter += 1
@@ -453,12 +500,18 @@ class PrefCommands(commands.Cog):
                         await self.set_default_reminder_timing(ctx, author)
                         return
                     case 8:
-                        await self.set_completion_ticks(ctx, author)
+                        await self.set_numbered_subjects(ctx, author)
                         return
                     case 9:
-                        await self.set_daily_todo_list_recap(ctx, author)
+                        await self.set_numbered_tasks(ctx, author)
                         return
                     case 10:
+                        await self.set_completion_ticks(ctx, author)
+                        return
+                    case 11:
+                        await self.set_daily_todo_list_recap(ctx, author)
+                        return
+                    case 12:
                         await self.set_display_todo_list_when_updated(ctx, author)
                         return
         

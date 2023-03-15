@@ -53,25 +53,25 @@ class TickedItemDeletionLoop(commands.Cog):
             
             # if user did not want ticked items and rather wanted items to just be deleted immediately (or didn't finish setup), no need to do anything more and just return
             preferences = read_json("preferences", username)
-            if "8. Completion_ticks" in preferences:
-                if "8a. Yes/No" in preferences["8. Completion_ticks"]:
-                    if preferences["8. Completion_ticks"]["8a. Yes/No"] == "no":
+            if "10. Completion_ticks" in preferences:
+                if "10a. Yes/No" in preferences["10. Completion_ticks"]:
+                    if preferences["10. Completion_ticks"]["10a. Yes/No"] == "no":
                         return
-                if "8c. Days_per_deletion_of_ticked_items" not in preferences["8. Completion_ticks"]:
+                if "10c. Days_per_deletion_of_ticked_items" not in preferences["10. Completion_ticks"]:
                     return
             else:
                 return # can't do anything if the user hasn't specified preferences about ticked items and their deletion yet
             
             # if a previous check has been done on this user, check user's cache for time of last ticked item deletion
             usercache = read_json("usercache", username)
-            days_per_deletion_of_ticked_items = int(preferences["8. Completion_ticks"]["8c. Days_per_deletion_of_ticked_items"])
+            days_per_deletion_of_ticked_items = int(preferences["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"])
             if "Last_ticked_item_deletion_UTC" in usercache:
                 Last_ticked_item_deletion_UTC = usercache["Last_ticked_item_deletion_UTC"]
                 Last_ticked_item_deletion_UTC = datetime.datetime.strptime(Last_ticked_item_deletion_UTC, "%m/%d/%Y, %H:%M:%S")
                 if (now_utc - Last_ticked_item_deletion_UTC).days >= days_per_deletion_of_ticked_items:
                     await self.delete_ticked_items(username)
 
-            # else calculate the number of days since this user's preferred start of the week and see if it matches their "8c. Days_per_deletion_of_ticked_items" pref
+            # else calculate the number of days since this user's preferred start of the week and see if it matches their "10c. Days_per_deletion_of_ticked_items" pref
             # and cache the time of last deletion (or this user's preferred start of the week if no deletion yet) for this user as a datetime string
             else:
                 start_of_week = ""
