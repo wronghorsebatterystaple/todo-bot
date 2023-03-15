@@ -4,17 +4,17 @@ from util.time_utils import *
 
 
 async def setup(bot):
-    await bot.add_cog(PrefCommands(bot))
+    await bot.add_cog(Command(bot))
 
 
-class PrefCommands(commands.Cog):
+class Command(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.prefs = {} # dictionary to read and write command caller's preferences to json
+        self.preferences = {} # dictionary to read and write command caller's preferences to json
 
 
 ######################################################################################################################################################
-#                                                                      COMMANDS                                                                      #
+#                                                                      COMMAND                                                                       #
 ######################################################################################################################################################
 
 
@@ -25,19 +25,21 @@ class PrefCommands(commands.Cog):
 
         # read preferences from json
         author = ctx.message.author
-        self.prefs = read_json("preferences", author)
+        self.preferences = read_json("preferences", author)
 
         # if /pref is used with no arguments, show list of all existing preferences
         if arg1 == "":
             output_message = "These are your currently set preferences:"
+            
             # reply in a more readable format than json
-            for pref, value in self.prefs.items():
+            for pref, value in self.preferences.items():
                 if not isinstance(value, dict):
                     output_message += "\n\t"
                     pref = ' '.join(pref.split('_')) # replace underscores with spaces
                     output_message += pref
                     output_message += ": "
                     output_message += value
+
                 # if single-nested json entry, unpack the nested dictionary too
                 else:
                     output_message += "\n\t"
@@ -70,7 +72,7 @@ class PrefCommands(commands.Cog):
 
         # read preferences from json
         author = ctx.message.author
-        self.prefs = read_json("preferences", author)
+        self.preferences = read_json("preferences", author)
 
         # call every preference-setting function
         await self.set_timezone(ctx, author)
@@ -91,6 +93,12 @@ class PrefCommands(commands.Cog):
     
     
 ######################################################################################################################################################
+#                                                                  ARGUMENT PARSER                                                                   #
+######################################################################################################################################################
+
+
+
+######################################################################################################################################################
 #                                                            PREFERENCE-SETTING FUNCTIONS                                                            #
 ######################################################################################################################################################
 
@@ -108,10 +116,10 @@ class PrefCommands(commands.Cog):
             valid = response != "error"
         # save response to user preferences json
         response = tzstr_to_displaystr(response)
-        self.prefs["1. Timezone"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["1. Timezone"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"timezone\" set to: " + self.prefs["1. Timezone"])
+        await ctx.send("> Preference for \"timezone\" set to: " + self.preferences["1. Timezone"])
         return
     
     
@@ -129,10 +137,10 @@ class PrefCommands(commands.Cog):
         # save response to user preferences json
         response = str(response.content)
         response = response.lower() if response.lower() == "date" else response.upper() # capitalize DOW
-        self.prefs["2. DOW_or_date"] = response
-        write_json("preferences", author, self.prefs) # write updated preferences into json every time in case allprefs sequence is cut off for whatever reason
+        self.preferences["2. DOW_or_date"] = response
+        write_json("preferences", author, self.preferences) # write updated preferences into json every time in case allprefs sequence is cut off for whatever reason
         # print confirmation
-        await ctx.send("> Preference for \"DOW or date\" set to: " + self.prefs["2. DOW_or_date"])
+        await ctx.send("> Preference for \"DOW or date\" set to: " + self.preferences["2. DOW_or_date"])
         return
     
 
@@ -149,10 +157,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         response = str(response.content).upper()
         # save response to user preferences
-        self.prefs["3. Date_format"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["3. Date_format"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"date format\" set to: " + self.prefs["3. Date_format"])
+        await ctx.send("> Preference for \"date format\" set to: " + self.preferences["3. Date_format"])
         return
 
 
@@ -168,10 +176,10 @@ class PrefCommands(commands.Cog):
         # wait for a valid response from user
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
-        self.prefs["4. Time_format"] = str(response.content) + "-hour"
-        write_json("preferences", author, self.prefs)
+        self.preferences["4. Time_format"] = str(response.content) + "-hour"
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"time format\" set to: " + self.prefs["4. Time_format"])
+        await ctx.send("> Preference for \"time format\" set to: " + self.preferences["4. Time_format"])
         return
 
     
@@ -188,10 +196,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).capitalize()
-        self.prefs["5. Start_of_week"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["5. Start_of_week"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"start of week\" set to: " + self.prefs["5. Start_of_week"])
+        await ctx.send("> Preference for \"start of week\" set to: " + self.preferences["5. Start_of_week"])
         return
     
 
@@ -207,11 +215,11 @@ class PrefCommands(commands.Cog):
             response = time_to_timestr(str(response.content).lower())
             valid = response != "error"
         # save response to user preferences json
-        response = timestr_to_displaystr(response, self.prefs)
-        self.prefs["6. Default_due_time"] = response
-        write_json("preferences", author, self.prefs)
+        response = timestr_to_displaystr(response, self.preferences)
+        self.preferences["6. Default_due_time"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"default due time\" set to: " + self.prefs["6. Default_due_time"])
+        await ctx.send("> Preference for \"default due time\" set to: " + self.preferences["6. Default_due_time"])
         return
     
 
@@ -228,17 +236,17 @@ class PrefCommands(commands.Cog):
             valid = response != "error"
         # save response to user preferences json
         response = durstr_to_displaystr(response)
-        self.prefs["7. Default_reminder_timing"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["7. Default_reminder_timing"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"default reminder timing\" set to: " + self.prefs["7. Default_reminder_timing"])
+        await ctx.send("> Preference for \"default reminder timing\" set to: " + self.preferences["7. Default_reminder_timing"])
         return
     
 
     ######################################################
     # 8. function for setting numbered subjects preference
     async def set_numbered_subjects(self, ctx:commands.Context, author):
-        await ctx.send("8. Numbered Subjects\n\t→ Enter \"yes\" if you want subjects/task categories to be automatically labeled numerically by alphabetical order (for easier access), else enter \"no\".")
+        await ctx.send("8. Numbered Subjects\n\t→ Enter \"yes\" if you want subjects/task categories (besides \"other\" and \"others\") to be labeled numerically by alphabetical order (for easier access), else enter \"no\".")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -248,17 +256,17 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["8. Numbered_subjects"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["8. Numbered_subjects"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"numbered subjects\" set to: " + self.prefs["8. Numbered_subjects"])
+        await ctx.send("> Preference for \"numbered subjects\" set to: " + self.preferences["8. Numbered_subjects"])
         return
     
 
     ###################################################
     # 9. function for setting numbered tasks preference
     async def set_numbered_tasks(self, ctx:commands.Context, author):
-        await ctx.send("9. Numbered Tasks\n\t→ Enter \"yes\" if you want tasks to be automatically labeled numerically by subject, due date, and then alphabetical order (for easier access), else enter \"no\".")
+        await ctx.send("9. Numbered Tasks\n\t→ Enter \"yes\" if you want tasks to be labeled numerically by subject, due date, and then alphabetical order (for easier access), else enter \"no\".")
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -268,10 +276,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["9. Numbered_tasks"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["9. Numbered_tasks"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"numbered tasks\" set to: " + self.prefs["9. Numbered_tasks"])
+        await ctx.send("> Preference for \"numbered tasks\" set to: " + self.preferences["9. Numbered_tasks"])
         return
     
 
@@ -288,10 +296,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["10. Completion_ticks"] = {"10a. Yes/No": response}
-        write_json("preferences", author, self.prefs)
+        self.preferences["10. Completion_ticks"] = {"10a. Yes/No": response}
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"completion ticks\" set to: " + self.prefs["10. Completion_ticks"]["10a. Yes/No"])
+        await ctx.send("> Preference for \"completion ticks\" set to: " + self.preferences["10. Completion_ticks"]["10a. Yes/No"])
 
         # follow-ups if "yes"
         if response == "yes":
@@ -313,17 +321,17 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content).lower()
-        self.prefs["10. Completion_ticks"]["10b. Colors"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["10. Completion_ticks"]["10b. Colors"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"tick colors\" set to: " + self.prefs["10. Completion_ticks"]["10b. Colors"])
+        await ctx.send("> Preference for \"tick colors\" set to: " + self.preferences["10. Completion_ticks"]["10b. Colors"])
         return
     
 
     #################################################################################################################################
     # 10c. function for setting days per check for deleting ticked items (days since preferred start of week/last check for deletion)
     async def set_days_per_deletion_of_ticked_items(self, ctx:commands.Context, author):
-        await ctx.send("10c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.prefs["5. Start_of_week"])
+        await ctx.send("10c. Days Per Deletion of Ticked Items\n\t→ Enter the number of days between each check to clear ticked items; e.g. 6 means clear once every 6 days starting the most recent " + self.preferences["5. Start_of_week"])
 
         def check_response(message):
             message_str = (str(message.content)).lower()
@@ -336,10 +344,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content)
-        self.prefs["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.prefs["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"])
+        await ctx.send("> Preference for \"days per deletion of ticked items\" set to: " + self.preferences["10. Completion_ticks"]["10c. Days_per_deletion_of_ticked_items"])
         return
     
 
@@ -356,10 +364,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json as nested dictionary
         response = str(response.content).lower()
-        self.prefs["11. Daily_todo_list_recap"] = {"11a. Yes/No": response}
-        write_json("preferences", author, self.prefs)
+        self.preferences["11. Daily_todo_list_recap"] = {"11a. Yes/No": response}
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"daily todo list recap\" set to: " + self.prefs["11. Daily_todo_list_recap"]["11a. Yes/No"])
+        await ctx.send("> Preference for \"daily todo list recap\" set to: " + self.preferences["11. Daily_todo_list_recap"]["11a. Yes/No"])
 
         # follow-up if "yes"
         if response == "yes":
@@ -379,11 +387,11 @@ class PrefCommands(commands.Cog):
             response = time_to_timestr(str(response.content).lower())
             valid = response != "error"
         # save response to user preferences json
-        response = timestr_to_displaystr(response, self.prefs)
-        self.prefs["11. Daily_todo_list_recap"]["11b. Daily_recap_time"] = response
-        write_json("preferences", author, self.prefs)
+        response = timestr_to_displaystr(response, self.preferences)
+        self.preferences["11. Daily_todo_list_recap"]["11b. Daily_recap_time"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"daily recap time\" set to: " + self.prefs["11. Daily_todo_list_recap"]["11b. Daily_recap_time"])
+        await ctx.send("> Preference for \"daily recap time\" set to: " + self.preferences["11. Daily_todo_list_recap"]["11b. Daily_recap_time"])
         return
     
 
@@ -400,10 +408,10 @@ class PrefCommands(commands.Cog):
         response = await self.bot.wait_for("message", check=check_response)
         # save response to user preferences json
         response = str(response.content).lower()
-        self.prefs["12. Display_todo_list_when_updated"] = response
-        write_json("preferences", author, self.prefs)
+        self.preferences["12. Display_todo_list_when_updated"] = response
+        write_json("preferences", author, self.preferences)
         # print confirmation
-        await ctx.send("> Preference for \"display todo list when updated\" set to: " + self.prefs["12. Display_todo_list_when_updated"])
+        await ctx.send("> Preference for \"display todo list when updated\" set to: " + self.preferences["12. Display_todo_list_when_updated"])
         return
 
 
@@ -418,7 +426,7 @@ class PrefCommands(commands.Cog):
         item_counter = 0 # to keep track of the actual numerical label of the arguments
         arg_length = len(arg1)
         
-        for k in self.prefs.keys():
+        for k in self.preferences.keys():
             item_counter += 1
             if k[:arg_length] == arg1[:arg_length]: # if match found
                 match item_counter:
@@ -472,7 +480,7 @@ class PrefCommands(commands.Cog):
         arg1 = arg1.lower()
         arg1 = '_'.join(arg1.split(' ')) # replace spaces with underscores since json uses underscores
 
-        for k in self.prefs.keys():
+        for k in self.preferences.keys():
             item_counter += 1
             if len(k) < (arg_length - 3): # if argument is longer than the preference name
                 continue
@@ -521,7 +529,7 @@ class PrefCommands(commands.Cog):
 
 
 ######################################################################################################################################################
-#                                                              COMMAND PREFIX FUNCTIONS                                                              #
+#                                                        BEFORE/AFTER COMMAND INVOKE FUNCTIONS                                                       #
 ######################################################################################################################################################
 # must do this for every file instead of having a master command group because command groups don't seem to carry between files
 

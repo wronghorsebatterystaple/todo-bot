@@ -129,6 +129,8 @@ class TickedItemDeletionLoop(commands.Cog):
                 self.users_offsets[username] = (hours, minutes)
                 times.append(datetime.time(hour=hours, minute=minutes, tzinfo=datetime.timezone.utc))
         
+        if times == []: # in case no users have used this bot yet and times is still empty
+            times = [datetime.time(hour=0, minute=0, second=0)]
         # update the times in @tasks.loop() for check_ticked_item_deletion()
         self.check_ticked_item_deletion.change_interval(time=times)
     
