@@ -5,7 +5,7 @@
 
 ################################################################################################################
 # determine if an inputted time is valid and convert it to a 4-digit 24-hour time string (e.g. "2359" or "0800")
-def time_to_timestr(time:str) -> str:
+async def time_to_timestr(time:str) -> str:
     timestr = ""
     twelve = False
     colon = False
@@ -15,7 +15,7 @@ def time_to_timestr(time:str) -> str:
 
     for i in range(len(time)):
         char = time[i]
-        if char.isnumeric():
+        if char.isdigit():
             timestr += char
             total_digits += 1
             if colon:
@@ -133,7 +133,7 @@ def tz_to_tzstr(tz:str) -> str:
 
     for i in range(len(tz)):
         char = tz[i]
-        if char.isnumeric():
+        if char.isdigit():
             tzstr += char
             total_digits += 1
             if colon:
@@ -232,7 +232,7 @@ def dur_to_durstr(dur:str) -> str:
     total_digits = 0
 
     for char in dur:
-        if char.isnumeric():
+        if char.isdigit():
             durstr += char
             total_digits += 1
             if colon:
@@ -247,7 +247,7 @@ def dur_to_durstr(dur:str) -> str:
             return "error"
     
     # if the user entered any number of zeros, this is a special case for no reminders
-    if durstr.isnumeric():
+    if durstr.isdigit():
         if int(durstr) == 0:
             return "0000"
 

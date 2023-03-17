@@ -1,14 +1,15 @@
 from discord.ext import commands
+
 from util.command_utils import *
 from util.json_utils import *
 from util.time_utils import *
 
 
 async def setup(bot):
-    await bot.add_cog(Command(bot))
+    await bot.add_cog(Addsubject(bot))
 
 
-class Command(commands.Cog):
+class Addsubject(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.todo_list = {} # dictionary to read and write command caller's todo list to json
@@ -119,31 +120,4 @@ class Command(commands.Cog):
                         return ("", "", "", "error")
 
         return (name, default_due_date, default_due_time, default_reminder_timing)
-
-
-######################################################################################################################################################
-#                                                        BEFORE/AFTER COMMAND INVOKE FUNCTIONS                                                       #
-######################################################################################################################################################
-# must do this for every file instead of having a master command group because command groups don't seem to carry between files
-
-
-    ########################################################################################################################################
-    # prevent other commands from being called during command runtimes by setting command prefix to <Null> for the duration of every command
-    @addsubject.before_invoke
-    async def disable_commands(self, ctx:commands.Context):
-        self.bot.command_prefix = '\u0000'
-
-
-    ########################
-    # restore command prefix
-    @addsubject.after_invoke
-    async def enable_commands(self, ctx:commands.Context):
-        self.bot.command_prefix = '/'
-    
-
-    ######################################################################################
-    # make sure users have fully set their preferences before trying to do todo list stuff
-    @addsubject.before_invoke
-    async def check_prefs(self, ctx:commands.Context):
-        await check_prefs_exist(ctx)
         

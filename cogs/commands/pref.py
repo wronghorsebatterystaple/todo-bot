@@ -1,13 +1,16 @@
+from functools import partial
+
 from discord.ext import commands
+
+from util.command_utils import *
 from util.json_utils import *
 from util.time_utils import *
 
 
 async def setup(bot):
-    await bot.add_cog(Command(bot))
+    await bot.add_cog(Pref(bot))
 
-
-class Command(commands.Cog):
+class Pref(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.preferences = {} # dictionary to read and write command caller's preferences to json
@@ -18,28 +21,36 @@ class Command(commands.Cog):
 ######################################################################################################################################################
 
 
-    ########################################################
-    # /pref: changes specific preference or show all of them
-    @commands.command()
-    async def pref(self, ctx:commands.Context, *, arg1=""): # asterisk is "consume rest" which allows multiple-word arguments
+    #####################################
+    # /pref: show or change preference(s)
+    @commands.group(name="pref", invoke_without_command=True) # invoke_without_command=False allows before_invoke and after_invoke functions to run
+    async def pref(self, ctx:commands.Context):
+        await ctx.send("> Use ```/pref show <\"all\"/pref number/pref name>``` to show prefs and ```/pref change <\"all\"/pref number/pref name>``` to change prefs.")
+        return
 
-        # read preferences from json
-        author = ctx.message.author
+    
+    ################################
+    # /pref show: show preference(s)
+    @pref.command()
+    async def show(self, ctx:commands.Context, *, arg1=""): # asterisk is "consume rest" which allows multiple-word arguments without quotation marks
+        author = ctx.author
         self.preferences = read_json("preferences", author)
+        pref_num = await self.parse_arguments(ctx, arg1)
 
-        # if /pref is used with no arguments, show list of all existing preferences
-        if arg1 == "":
+        # if invalid input
+        if pref_num == -1:
+            return
+        
+        # else if /pref show is used with "all", show list of all existing preferences
+        if pref_num == 0:
             output_message = "These are your currently set preferences:"
-            
             # reply in a more readable format than json
             for pref, value in self.preferences.items():
                 if not isinstance(value, dict):
                     output_message += "\n\t"
-                    pref = ' '.join(pref.split('_')) # replace underscores with spaces
-                    output_message += pref
+                    output_message += ' '.join(pref.split('_')) # replace underscores with spaces
                     output_message += ": "
                     output_message += value
-
                 # if single-nested json entry, unpack the nested dictionary too
                 else:
                     output_message += "\n\t"
@@ -47,48 +58,64 @@ class Command(commands.Cog):
                     output_message += pref
                     for subpref, subvalue in value.items():
                         output_message += "\n\t\t"
-                        subpref = ' '.join(subpref.split('_')) # replace underscores with spaces
-                        output_message += subpref
+                        output_message += ' '.join(subpref.split('_')) # replace underscores with spaces
                         output_message += ": "
                         output_message += subvalue
             await ctx.send(output_message)
             return
-        
-        # else parse argument to match with preference number/name
-        # if the argument starts with/is a number, try to match with existing preference number from json
-        if arg1[0].isdigit():
-            await self.choose_pref_num(ctx, author, arg1)
-            return
-            
-        # else match with the first preference in order of their numerical label that completely matches the argument
-        await self.choose_pref_name(ctx, author, arg1)
+
+        # else if /pref show is used with a number or name, parse_arguments() should've converted it into a number and we try to match that
+        pref, value = list(self.preferences.items())[pref_num - 1]
+        if not isinstance(value, dict):
+            output_message = f"This is your currently set preference for \""
+            output_message += ' '.join(pref.split('_')) # replace underscores with spaces
+            output_message += "\": "
+            output_message += value
+        # if single-nested json entry, unpack the nested dictionary too
+        else:
+            output_message = f"These are your currently set preferences for \""
+            output_message += ' '.join(pref.split('_')) # replace underscores with spaces
+            output_message += "\": "
+            for subpref, subvalue in value.items():
+                output_message += "\n\t"
+                output_message += ' '.join(subpref.split('_')) # replace underscores with spaces
+                output_message += ": "
+                output_message += subvalue
+        await ctx.send(output_message)
         return
     
-
+    
     ####################################
-    # /allprefs: changes all preferences
-    @commands.command()
-    async def allprefs(self, ctx:commands.Context):
-
-        # read preferences from json
-        author = ctx.message.author
+    # /pref change: change preference(s)
+    @pref.command()
+    async def change(self, ctx:commands.Context, *, arg1=""):
+        author = ctx.author
         self.preferences = read_json("preferences", author)
+        pref_num = await self.parse_arguments(ctx, arg1)
 
-        # call every preference-setting function
-        await self.set_timezone(ctx, author)
-        await self.set_dow_or_date(ctx, author)
-        await self.set_date_format(ctx, author)
-        await self.set_time_format(ctx, author)
-        await self.set_start_of_weeks(ctx, author)
-        await self.set_default_due_time(ctx, author)
-        await self.set_default_reminder_timing(ctx, author)
-        await self.set_numbered_subjects(ctx, author)
-        await self.set_numbered_tasks(ctx, author)
-        await self.set_completion_ticks(ctx, author)
-        await self.set_daily_todo_list_recap(ctx, author)
-        await self.set_display_todo_list_when_updated(ctx, author)
-        await ctx.send("You're all set up! Ping me for commands and help.")
+        # if invalid input
+        if pref_num == -1:
+            return
+        
+        # else if /pref change is used with "all", run through list of all existing preferences
+        if pref_num == 0:
+            await self.set_timezone(ctx, author)
+            await self.set_dow_or_date(ctx, author)
+            await self.set_date_format(ctx, author)
+            await self.set_time_format(ctx, author)
+            await self.set_start_of_weeks(ctx, author)
+            await self.set_default_due_time(ctx, author)
+            await self.set_default_reminder_timing(ctx, author)
+            await self.set_numbered_subjects(ctx, author)
+            await self.set_numbered_tasks(ctx, author)
+            await self.set_completion_ticks(ctx, author)
+            await self.set_daily_todo_list_recap(ctx, author)
+            await self.set_display_todo_list_when_updated(ctx, author)
+            await ctx.send("You're all set up! Ping me for commands and help.")
+            return
 
+        # else if /pref change is used with a number or name, parse_arguments() should've converted it into a number and we try to match that
+        await self.pref_change_switcher(ctx, author, pref_num)
         return
     
     
@@ -96,6 +123,38 @@ class Command(commands.Cog):
 #                                                                  ARGUMENT PARSER                                                                   #
 ######################################################################################################################################################
 
+
+    #######################################################
+    # parses user arguments for /pref show and /pref change
+    async def parse_arguments(self, ctx:commands.Context, arg:str) -> int:
+
+        # if the argument was "all" or blank, show/change all arguments
+        if arg.lower() == "all" or arg == "":
+            return 0
+
+        # else if the argument is a number
+        if arg.isdigit():
+            arg = int(arg)
+            if arg > 0 and arg <= len(self.preferences):
+                return arg
+            await ctx.send("what") # if number is invalid
+            return -1
+        
+        # else if the argument is not a number and is a name, attempt to match it to a preference number
+        item_counter = 0
+        arg_length = len(arg)
+        arg = arg.lower()
+        arg = '_'.join(arg.split(' ')) # replace spaces with underscores since json uses underscores
+        for k in self.preferences.keys():
+            item_counter += 1
+            if len(k) < (arg_length - 3): # if argument is longer than the preference name
+                continue
+            if arg == (k[3:3 + arg_length]).lower(): # else if match found
+                return item_counter
+        
+        # else if match not found because of invalid argument
+        await ctx.send("what")
+        return -1
 
 
 ######################################################################################################################################################
@@ -138,7 +197,7 @@ class Command(commands.Cog):
         response = str(response.content)
         response = response.lower() if response.lower() == "date" else response.upper() # capitalize DOW
         self.preferences["2. DOW_or_date"] = response
-        write_json("preferences", author, self.preferences) # write updated preferences into json every time in case allprefs sequence is cut off for whatever reason
+        write_json("preferences", author, self.preferences) # write updated preferences into json every time in case "/pref change all" sequence is cut off for whatever reason
         # print confirmation
         await ctx.send("> Preference for \"DOW or date\" set to: " + self.preferences["2. DOW_or_date"])
         return
@@ -335,7 +394,7 @@ class Command(commands.Cog):
 
         def check_response(message):
             message_str = (str(message.content)).lower()
-            if message_str.isnumeric():
+            if message_str.isdigit():
                 if int(message_str) > 0:
                     return True
             return False
@@ -420,132 +479,47 @@ class Command(commands.Cog):
 ######################################################################################################################################################
 
 
-    ##########################################################################################
-    # match arguments in /pref to preference-setting functions based on their numerical labels
-    async def choose_pref_num(self, ctx:commands.Context, author, arg1):
-        item_counter = 0 # to keep track of the actual numerical label of the arguments
-        arg_length = len(arg1)
+    #################################################################################################
+    # match arguments in /pref change to preference-setting functions based on their numerical labels
+    async def pref_change_switcher(self, ctx:commands.Context, author, arg_num):
+        match arg_num:
+            case 1:
+                await self.set_timezone(ctx, author)
+                return
+            case 2:
+                await self.set_dow_or_date(ctx, author)
+                return
+            case 3:
+                await self.set_date_format(ctx, author)
+                return
+            case 4:
+                await self.set_time_format(ctx, author)
+                return
+            case 5:
+                await self.set_start_of_weeks(ctx, author)
+                return
+            case 6:
+                await self.set_default_due_time(ctx, author)
+                return
+            case 7:
+                await self.set_default_reminder_timing(ctx, author)
+                return
+            case 8:
+                await self.set_numbered_subjects(ctx, author)
+                return
+            case 9:
+                await self.set_numbered_tasks(ctx, author)
+                return
+            case 10:
+                await self.set_completion_ticks(ctx, author)
+                return
+            case 11:
+                await self.set_daily_todo_list_recap(ctx, author)
+                return
+            case 12:
+                await self.set_display_todo_list_when_updated(ctx, author)
+                return
         
-        for k in self.preferences.keys():
-            item_counter += 1
-            if k[:arg_length] == arg1[:arg_length]: # if match found
-                match item_counter:
-                    case 1:
-                        await self.set_timezone(ctx, author)
-                        return
-                    case 2:
-                        await self.set_dow_or_date(ctx, author)
-                        return
-                    case 3:
-                        await self.set_date_format(ctx, author)
-                        return
-                    case 4:
-                        await self.set_time_format(ctx, author)
-                        return
-                    case 5:
-                        await self.set_start_of_weeks(ctx, author)
-                        return
-                    case 6:
-                        await self.set_default_due_time(ctx, author)
-                        return
-                    case 7:
-                        await self.set_default_reminder_timing(ctx, author)
-                        return
-                    case 8:
-                        await self.set_numbered_subjects(ctx, author)
-                        return
-                    case 9:
-                        await self.set_numbered_tasks(ctx, author)
-                        return
-                    case 10:
-                        await self.set_completion_ticks(ctx, author)
-                        return
-                    case 11:
-                        await self.set_daily_todo_list_recap(ctx, author)
-                        return
-                    case 12:
-                        await self.set_display_todo_list_when_updated(ctx, author)
-                        return
-        
-        # else if match not found because of invalid argument
+        # if match not found because of invalid argument
         await ctx.send("what")
         return
-
-
-    ###############################################################################
-    # match arguments in /pref to preference-setting functions based on their names
-    async def choose_pref_name(self, ctx:commands.Context, author, arg1):
-        item_counter = 0
-        arg_length = len(arg1)
-        arg1 = arg1.lower()
-        arg1 = '_'.join(arg1.split(' ')) # replace spaces with underscores since json uses underscores
-
-        for k in self.preferences.keys():
-            item_counter += 1
-            if len(k) < (arg_length - 3): # if argument is longer than the preference name
-                continue
-            if arg1 == (k[3:3 + arg_length]).lower(): # else if match found
-                match item_counter:
-                    case 1:
-                        await self.set_timezone(ctx, author)
-                        return
-                    case 2:
-                        await self.set_dow_or_date(ctx, author)
-                        return
-                    case 3:
-                        await self.set_date_format(ctx, author)
-                        return
-                    case 4:
-                        await self.set_time_format(ctx, author)
-                        return
-                    case 5:
-                        await self.set_start_of_weeks(ctx, author)
-                        return
-                    case 6:
-                        await self.set_default_due_time(ctx, author)
-                        return
-                    case 7:
-                        await self.set_default_reminder_timing(ctx, author)
-                        return
-                    case 8:
-                        await self.set_numbered_subjects(ctx, author)
-                        return
-                    case 9:
-                        await self.set_numbered_tasks(ctx, author)
-                        return
-                    case 10:
-                        await self.set_completion_ticks(ctx, author)
-                        return
-                    case 11:
-                        await self.set_daily_todo_list_recap(ctx, author)
-                        return
-                    case 12:
-                        await self.set_display_todo_list_when_updated(ctx, author)
-                        return
-        
-        # else if match not found because of invalid argument
-        await ctx.send("what")
-        return
-
-
-######################################################################################################################################################
-#                                                        BEFORE/AFTER COMMAND INVOKE FUNCTIONS                                                       #
-######################################################################################################################################################
-# must do this for every file instead of having a master command group because command groups don't seem to carry between files
-
-
-    ########################################################################################################################################
-    # prevent other commands from being called during command runtimes by setting command prefix to <Null> for the duration of every command
-    @pref.before_invoke
-    @allprefs.before_invoke
-    async def disable_commands(self, ctx:commands.Context):
-        self.bot.command_prefix = '\u0000'
-
-
-    ########################
-    # restore command prefix
-    @pref.after_invoke
-    @allprefs.after_invoke
-    async def enable_commands(self, ctx:commands.Context):
-        self.bot.command_prefix = '/'
-        
