@@ -42,7 +42,7 @@ class Addsubject(commands.Cog):
         write_json("todolists", author, self.todo_list)
 
         # print confirmation
-        await ctx.send(f"Congratulations, you found a bug. Here's a cookie 🍪\n\nDM AnonymousRand#1803 if you feel like it\nʸᵉˢ ᵐʸ ᵉʳʳᵒʳ ᶜᵒᵈᵉ ⁱˢ ᶜᵒᵒᵏⁱᵉ")
+        await ctx.send("> Subject \"" + args_processed[0] + "\" added to todo list")
         return
 
 

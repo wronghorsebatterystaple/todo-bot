@@ -17,7 +17,7 @@ from util.time_utils import *
 def enter_todo_list_subject(author:str, todo_list:dict, new_entry:tuple[str, str, str, str]) -> dict:
     new_todo_list = {} # new dictionary to store updated todo list
     new_entry_name = new_entry[0]
-    numbered_subjects = (read_json("preferences", author))["8. Numbered_subjects"] == "yes"
+    numbered_subjects = read_json("preferences", author)["8. Numbered_subjects"] == "yes"
     inserted = False
     counter = 0 # for adding numerical labels
 
@@ -37,7 +37,6 @@ def enter_todo_list_subject(author:str, todo_list:dict, new_entry:tuple[str, str
     
     # else iterate through list to find the right insertion spot
     for existing_key, existing_value in todo_list.items():
-        print("current k, v is", existing_key, ":", existing_value, "and the new entry name is", new_entry_name)
         counter += 1
         
         # no need to continue comparing alphabetical orders if insertion spot has already been found
@@ -53,7 +52,8 @@ def enter_todo_list_subject(author:str, todo_list:dict, new_entry:tuple[str, str
                 existing_key = ''.join(existing_key.split(' ')[1:])
 
             # if the new entry is alphabetically before the current entry being iterated over, insert new entry before current entry
-            if new_entry_name < existing_key:
+            # also make sure to keep "other" abnd "others" subjects at the very bottom (this also prevents a bug)
+            if new_entry_name < existing_key or existing_key.lower() == "other" or existing_key.lower() == "others":
                 if numbered_subjects:
                     new_entry_name = str(counter) + ". " + new_entry_name
                 new_todo_list[new_entry_name] = {\
