@@ -25,49 +25,24 @@ class Addsubject(commands.Cog):
     @commands.command()
     async def addsubject(self, ctx:commands.Context, *args):
         arg_length = len(args)
-        print("1", args)
-
-        # if an improper number of arguments is entered, return error
-        if arg_length < 1:
-            await ctx.send("> Too few arguments: the format is ```/addsubject <subject name> "\
-                "<[optional] default due date> <[optional] default due time> <[optional] default reminder timing>```"\
-                "Remember to use quotation marks around multi-word arguments, and the escape character "\
-                "\ before any other quotation marks that are to be included in arguments.")
-            return
-        if arg_length > 4:
-            await ctx.send("> Too many arguments: the format is ```/addsubject <subject name> "\
-                "<[optional] default due date> <[optional] default due time> <[optional] default reminder timing>```"\
-                "Remember to use quotation marks around multi-word arguments, and the escape character "\
-                "\ before any other quotation marks that are to be included in arguments.")
-            return
         
-        print("2")
-        # parse arguments and make they are of the correct format/order
+        # parse arguments and make they are of the correct format/order and pulling in absent default due time/reminder timing arguments from preferences
         args_processed = await self.parse_arguments(ctx, args)
         if args_processed[3] == "error":
             return
-        
-        print("3")
-        # enter into dictionary
-        author = ctx.author
-        self.todo_list = read_json("todolists", author)
-        self.todo_list[args_processed[0]] =\
-                    {"Default_due_date": args_processed[1],
-                    "Default_due_time": args_processed[2],
-                    "Default_reminder_timing": args_processed[3]}
 
-        print("4")
-        # resort categories and add numerical label if necessary
-        self.todo_list = sort_todo_list_subjects(author, self.todo_list)
-        self.todo_list = add_numerical_labels_subjects(author, self.todo)
+        # enter into dictionary, resorting categories and addding numerical label if necessary
+        author = ctx.author
+        self.todo_list = enter_todo_list_subject(author, read_json("todolists", author), args_processed)
+        if self.todo_list == {"error": "error"}:
+            await ctx.send("Congratulations, you found a bug. Here's a cookie 🍪\n\nDM AnonymousRand#1803 if you feel like it\n\nʸᵉˢ ᵐʸ ᵉʳʳᵒʳ ᶜᵒᵈᵉ ⁱˢ ᶜᵒᵒᵏⁱᵉ")
+            return
         
-        print("5")
         # write to todo list json
         write_json("todolists", author, self.todo_list)
-        print("6")
 
         # print confirmation
-        await ctx.send(f"> work on this later")
+        await ctx.send(f"Congratulations, you found a bug. Here's a cookie 🍪\n\nDM AnonymousRand#1803 if you feel like it\nʸᵉˢ ᵐʸ ᵉʳʳᵒʳ ᶜᵒᵈᵉ ⁱˢ ᶜᵒᵒᵏⁱᵉ")
         return
 
 
@@ -79,8 +54,21 @@ class Addsubject(commands.Cog):
     #######################################################################################
     # parses user arguments for /addsubject and unscrambles optional arguments if necessary
     async def parse_arguments(self, ctx:commands.Context, args:list) -> tuple[str, str, str, str]:
-        print("received")
         arg_length = len(args)
+
+        # if an improper number of arguments is entered, return error
+        if arg_length < 1:
+            await ctx.send("> Too few arguments: the format is ```/addsubject <subject name> "\
+                "<[optional] default due date> <[optional] default due time> <[optional] default reminder timing>```"\
+                "Remember to use quotation marks around multi-word arguments, and the escape character "\
+                "\ before any other quotation marks that are to be included in arguments.")
+            return ("", "", "", "error")
+        if arg_length > 4:
+            await ctx.send("> Too many arguments: the format is ```/addsubject <subject name> "\
+                "<[optional] default due date> <[optional] default due time> <[optional] default reminder timing>```"\
+                "Remember to use quotation marks around multi-word arguments, and the escape character "\
+                "\ before any other quotation marks that are to be included in arguments.")
+            return ("", "", "", "error")
 
         name = args[0]
         default_due_date = ""
@@ -118,6 +106,15 @@ class Addsubject(commands.Cog):
                     else:
                         await ctx.send(f"> Invalid argument: ```{arg}```")
                         return ("", "", "", "error")
+
+        # if user didn't provide a default due time/reminder timing, pull it from preferences
+        # there is no default due date preference since it tends to be much more variable
+        if default_due_time == "" or default_reminder_timing == "":
+            preferences = read_json("preferences", ctx.author)
+            if default_due_time == "":
+                default_due_time = time_to_timestr(preferences["6. Default_due_time"])
+            if default_reminder_timing == "":
+                default_reminder_timing = dur_to_durstr(preferences["7. Default_reminder_timing"])
 
         return (name, default_due_date, default_due_time, default_reminder_timing)
         

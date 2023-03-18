@@ -5,7 +5,7 @@
 
 ################################################################################################################
 # determine if an inputted time is valid and convert it to a 4-digit 24-hour time string (e.g. "2359" or "0800")
-async def time_to_timestr(time:str) -> str:
+def time_to_timestr(time:str) -> str:
     timestr = ""
     twelve = False
     colon = False
