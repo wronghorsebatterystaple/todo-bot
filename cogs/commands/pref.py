@@ -149,7 +149,7 @@ class Pref(commands.Cog):
             item_counter += 1
             if len(k) < (arg_length - 3): # if argument is longer than the preference name
                 continue
-            if arg == (k[3:3 + arg_length]).lower(): # else if match found
+            if arg == (k[3:3 + arg_length]).lower(): # else if match found (matching the start of an existing pref name)
                 return item_counter
         
         # else if match not found because of invalid argument

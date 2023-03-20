@@ -1,6 +1,7 @@
 from discord.ext import commands
 
 from util.command_utils import *
+from util.date_utils import *
 from util.json_utils import *
 from util.time_utils import *
 
@@ -33,7 +34,7 @@ class Addsubject(commands.Cog):
 
         # enter into dictionary, resorting categories and addding numerical label if necessary
         author = ctx.author
-        self.todo_list = enter_todo_list_subject(author, read_json("todolists", author), args_processed)
+        self.todo_list = create_todo_list_subject(author, read_json("todolists", author), args_processed)
         if self.todo_list == {"error": "error"}:
             await ctx.send("Congratulations, you found a bug. Here's a cookie 🍪\n\nDM AnonymousRand#1803 if you feel like it\n\nʸᵉˢ ᵐʸ ᵉʳʳᵒʳ ᶜᵒᵈᵉ ⁱˢ ᶜᵒᵒᵏⁱᵉ")
             return
@@ -77,31 +78,21 @@ class Addsubject(commands.Cog):
 
         # unscramble optional argument order
         if arg_length > 1:
-            print("unscrambling...")
             for arg in args[1:]:
-                print("current arg:", arg)
-
                 # assign due time or reminder timing whenever a colon is detected, prioritizing due time since it comes first
                 if ':' in arg:
-                    print("colon")
                     if time_to_timestr(arg) != "error" and default_due_time == "":
-                        print("assigned to time")
                         default_due_time = time_to_timestr(arg)
                     elif dur_to_durstr(arg) != "error" and default_reminder_timing == "":
-                        print("assigned to reminder timing")
                         default_reminder_timing = dur_to_durstr(arg)
                     else:
                         await ctx.send(f"> Invalid argument: ```{arg}```")
                         return ("", "", "", "error")
-
                 # assign due date or due time otherwise (reminder timing has to have a colon since it's a duration), prioritizing due date since it comes first
                 else:
-                    print("not colon")
                     if date_to_datestr(arg) != "error" and default_due_date == "":
-                        print("assigned to date")
-                        default_due_date = date_to_datestr(arg)
+                        default_due_date = date_to_datestr(ctx.author, arg)
                     elif time_to_timestr(arg) != "error" and default_due_time == "":
-                        print("assigned to time")
                         default_due_time = time_to_timestr(arg)
                     else:
                         await ctx.send(f"> Invalid argument: ```{arg}```")
