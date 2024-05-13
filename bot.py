@@ -66,7 +66,7 @@ async def on_command(ctx:commands.Context):
 @bot.event
 async def on_command_completion(ctx:commands.Context):
     bot.command_prefix = '/'
-    
+
 
 ######################################################################################################################################################
 #                                                                      BOT RUN                                                                       #

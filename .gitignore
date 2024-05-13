@@ -1,5 +1,7 @@
 *.env
+google_credentials.json
 
-/jsons
+venv/
+jsons/
 
 __pycache__/
